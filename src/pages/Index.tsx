@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import tbjlogo from "@/assets/tbjlogo.png";
 import footer from "@/assets/footer.png";
 
@@ -8,57 +9,24 @@ const CORRECT_ANSWERS: Record<number, string> = {
 };
 
 const QUESTIONS = [
-  {
-    id: 1,
-    text: "Segundo o Decreto nº 001/2026, a exclusão de antecedentes criminais será realizada por meio de:",
-    options: ["A) Solicitação administrativa", "B) Pedido na delegacia", "C) Ação judicial", "D) Pedido ao Ministério Público"],
-  },
-  {
-    id: 2,
-    text: "Qual órgão possui competência exclusiva para determinar a exclusão de antecedentes criminais?",
-    options: ["A) Polícia Militar", "B) Polícia Civil", "C) Ministério Público", "D) Poder Judiciário"],
-  },
-  {
-    id: 3,
-    text: "Segundo o Decreto nº 003/2026, a audiência de custódia tem como finalidade principal:",
-    options: ["A) Aplicar pena imediatamente ao acusado", "B) Encerrar o processo criminal", "C) Verificar a legalidade da prisão e garantir os direitos do preso", "D) Registrar apenas o boletim de ocorrência"],
-  },
-  {
-    id: 4,
-    text: "De acordo com o fluxo legal de prisão estabelecido pelo Decreto nº 006/2026, após a abordagem policial o suspeito deve ser conduzido para:",
-    options: ["A) Tribunal de Justiça", "B) Delegacia da Polícia Civil", "C) Ministério Público", "D) Prefeitura"],
-  },
-  {
-    id: 5,
-    text: "Utilizar roupas ou acessórios de uso exclusivo policial configura qual infração?",
-    options: ["A) Art. 289", "B) Art. 200-A", "C) Art. 333", "D) Art. 19"],
-  },
-  {
-    id: 6,
-    text: "Oferecer vantagem indevida a um funcionário público para obter benefício caracteriza qual crime?",
-    options: ["A) Desobediência", "B) Desacato", "C) Corrupção (Art. 333)", "D) Denúncia caluniosa"],
-  },
-  {
-    id: 7,
-    text: "Desrespeitar ou ofender um funcionário público no exercício de sua função configura:",
-    options: ["A) Desobediência", "B) Desacato (Art. 331)", "C) Suborno", "D) Associação criminosa"],
-  },
-  {
-    id: 8,
-    text: "Inventar um crime e acusar alguém sabendo que ele é inocente caracteriza:",
-    options: ["A) Falsidade ideológica", "B) Denúncia caluniosa (Art. 339)", "C) Corrupção", "D) Associação criminosa"],
-  },
-  {
-    id: 9,
-    text: "Portar arma automática sem autorização configura qual crime?",
-    options: ["A) Porte ilegal de arma classe 1", "B) Porte ilegal de arma classe 2 (Art. 17)", "C) Tráfico de munições", "D) Tráfico de armas"],
-  },
-  {
-    id: 10,
-    text: "Ser flagrado com mais de duas unidades de entorpecentes caracteriza:",
-    options: ["A) Porte pessoal", "B) Tráfico de drogas (Art. 33)", "C) Contrabando", "D) Associação criminosa"],
-  },
+  { id: 1, text: "Segundo o Decreto nº 001/2026, a exclusão de antecedentes criminais será realizada por meio de:", options: ["A) Solicitação administrativa", "B) Pedido na delegacia", "C) Ação judicial", "D) Pedido ao Ministério Público"] },
+  { id: 2, text: "Qual órgão possui competência exclusiva para determinar a exclusão de antecedentes criminais?", options: ["A) Polícia Militar", "B) Polícia Civil", "C) Ministério Público", "D) Poder Judiciário"] },
+  { id: 3, text: "Segundo o Decreto nº 003/2026, a audiência de custódia tem como finalidade principal:", options: ["A) Aplicar pena imediatamente ao acusado", "B) Encerrar o processo criminal", "C) Verificar a legalidade da prisão e garantir os direitos do preso", "D) Registrar apenas o boletim de ocorrência"] },
+  { id: 4, text: "De acordo com o fluxo legal de prisão estabelecido pelo Decreto nº 006/2026, após a abordagem policial o suspeito deve ser conduzido para:", options: ["A) Tribunal de Justiça", "B) Delegacia da Polícia Civil", "C) Ministério Público", "D) Prefeitura"] },
+  { id: 5, text: "Utilizar roupas ou acessórios de uso exclusivo policial configura qual infração?", options: ["A) Art. 289", "B) Art. 200-A", "C) Art. 333", "D) Art. 19"] },
+  { id: 6, text: "Oferecer vantagem indevida a um funcionário público para obter benefício caracteriza qual crime?", options: ["A) Desobediência", "B) Desacato", "C) Corrupção (Art. 333)", "D) Denúncia caluniosa"] },
+  { id: 7, text: "Desrespeitar ou ofender um funcionário público no exercício de sua função configura:", options: ["A) Desobediência", "B) Desacato (Art. 331)", "C) Suborno", "D) Associação criminosa"] },
+  { id: 8, text: "Inventar um crime e acusar alguém sabendo que ele é inocente caracteriza:", options: ["A) Falsidade ideológica", "B) Denúncia caluniosa (Art. 339)", "C) Corrupção", "D) Associação criminosa"] },
+  { id: 9, text: "Portar arma automática sem autorização configura qual crime?", options: ["A) Porte ilegal de arma classe 1", "B) Porte ilegal de arma classe 2 (Art. 17)", "C) Tráfico de munições", "D) Tráfico de armas"] },
+  { id: 10, text: "Ser flagrado com mais de duas unidades de entorpecentes caracteriza:", options: ["A) Porte pessoal", "B) Tráfico de drogas (Art. 33)", "C) Contrabando", "D) Associação criminosa"] },
 ];
+
+type RankingEntry = {
+  id: string;
+  nome: string;
+  score: number;
+  created_at: string;
+};
 
 const Index = () => {
   const [nome, setNome] = useState("");
@@ -74,6 +42,22 @@ const Index = () => {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const [ranking, setRanking] = useState<RankingEntry[]>([]);
+  const [showRanking, setShowRanking] = useState(false);
+
+  const fetchRanking = async () => {
+    const { data } = await supabase
+      .from("exam_responses")
+      .select("id, nome, score, created_at")
+      .order("score", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(20);
+    if (data) setRanking(data as RankingEntry[]);
+  };
+
+  useEffect(() => {
+    fetchRanking();
+  }, []);
 
   const lockIdentity = () => {
     if (!nome || !rg || !idade || !discord || !telefone || !interesse) return;
@@ -89,7 +73,6 @@ const Index = () => {
     for (let i = 1; i <= 10; i++) {
       if (answers[i] === CORRECT_ANSWERS[i]) score += 0.5;
     }
-    // Discursive questions scored manually — placeholder 0
     return score;
   };
 
@@ -111,21 +94,70 @@ const Index = () => {
     setErrors([]);
     setSending(true);
 
-    // Build email body
-    const objectiveAnswers = QUESTIONS.map(
-      (q) => `${q.id}. ${answers[q.id]}`
-    ).join("\n");
+    try {
+      const score = calculateScore();
 
-    const body = `EXAME OAB BRASILÂNDIA — RESPOSTAS\n\nCANDIDATO\nNome: ${nome}\nRG: ${rg}\nIdade: ${idade}\nDiscord: ${discord}\nTelefone: ${telefone}\nInteresse no Judiciário: ${interesse}\n\nRESPOSTAS OBJETIVAS\n${objectiveAnswers}\n\nQUESTÃO 11 (Discursiva)\n${discursive1}\n\nQUESTÃO 12 (Discursiva)\n${discursive2}\n\nPontuação Objetiva: ${calculateScore()}/5.0`;
+      const { data, error } = await supabase.functions.invoke("send-exam-email", {
+        body: {
+          nome, rg, idade, discord, telefone, interesse,
+          answers, discursive1, discursive2, score,
+        },
+      });
 
-    // Send via mailto as simple fallback
-    const mailtoLink = `mailto:juliaavancisoares@gmail.com?subject=${encodeURIComponent(`OAB Brasilândia — ${nome}`)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink, "_blank");
+      if (error) throw error;
 
-    setSending(false);
-    setSubmitted(true);
-    window.scrollTo({ top: 0 });
+      await fetchRanking();
+      setSubmitted(true);
+      window.scrollTo({ top: 0 });
+    } catch (err: any) {
+      console.error("Erro ao enviar:", err);
+      setErrors(["Erro ao enviar respostas. Tente novamente."]);
+    } finally {
+      setSending(false);
+    }
   };
+
+  // Ranking component
+  const RankingSection = () => (
+    <div className="mb-10">
+      <button
+        onClick={() => setShowRanking(!showRanking)}
+        className="bg-accent text-accent-foreground px-6 py-2 font-semibold hover:opacity-80 mb-4"
+      >
+        {showRanking ? "Ocultar Ranking" : "Classificações dos Candidatos"}
+      </button>
+      {showRanking && (
+        <div className="border border-gold overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-primary text-primary-foreground">
+                <th className="px-4 py-2 text-left">#</th>
+                <th className="px-4 py-2 text-left">Candidato</th>
+                <th className="px-4 py-2 text-right">Nota Objetiva</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranking.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-4 text-center text-muted-foreground">
+                    Nenhuma resposta registrada ainda.
+                  </td>
+                </tr>
+              ) : (
+                ranking.map((r, i) => (
+                  <tr key={r.id} className={i % 2 === 0 ? "bg-secondary" : "bg-background"}>
+                    <td className="px-4 py-2 font-bold">{i + 1}º</td>
+                    <td className="px-4 py-2">{r.nome}</td>
+                    <td className="px-4 py-2 text-right font-semibold">{Number(r.score).toFixed(1)}/5.0</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 
   if (submitted) {
     const score = calculateScore();
@@ -146,6 +178,8 @@ const Index = () => {
           <p className="text-sm text-muted-foreground mb-8">
             As questões discursivas (11 e 12) valem 2,5 pontos cada e serão corrigidas manualmente. A nota total máxima é 10,0 pontos.
           </p>
+
+          <RankingSection />
 
           <h2 className="font-serif text-2xl font-bold mb-6">Gabarito — Questões Objetivas</h2>
 
@@ -213,24 +247,17 @@ const Index = () => {
           <h2 className="font-serif text-xl font-bold mb-3">Material de Estudo</h2>
           <p className="text-sm text-muted-foreground mb-4">Consulte os materiais abaixo antes de realizar a prova:</p>
           <div className="flex flex-col gap-3">
-            <a
-              href="https://docs.google.com/spreadsheets/d/1uw2MlSJrNCaRr3PQDMa1PFnvEHTLjBuVzg_b_Ib6fJw/edit?gid=0#gid=0"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-primary text-primary-foreground px-5 py-2 text-center font-semibold hover:bg-foreground"
-            >
+            <a href="https://docs.google.com/spreadsheets/d/1uw2MlSJrNCaRr3PQDMa1PFnvEHTLjBuVzg_b_Ib6fJw/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer" className="inline-block bg-primary text-primary-foreground px-5 py-2 text-center font-semibold hover:bg-foreground">
               Código Penal e Leis de Trânsito — Brasilândia
             </a>
-            <a
-              href="https://tropical-tuesday-b20.notion.site/CONSTITUI-O-FEDERAL-DE-BRASIL-NDIA-20e4a70cd2ea80af9b48d4f31a2a4be3"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-primary text-primary-foreground px-5 py-2 text-center font-semibold hover:bg-foreground"
-            >
+            <a href="https://tropical-tuesday-b20.notion.site/CONSTITUI-O-FEDERAL-DE-BRASIL-NDIA-20e4a70cd2ea80af9b48d4f31a2a4be3" target="_blank" rel="noopener noreferrer" className="inline-block bg-primary text-primary-foreground px-5 py-2 text-center font-semibold hover:bg-foreground">
               Constituição Federal de Brasilândia
             </a>
           </div>
         </div>
+
+        {/* Ranking */}
+        <RankingSection />
 
         {/* Errors */}
         {errors.length > 0 && (
@@ -248,72 +275,32 @@ const Index = () => {
         <div className="flex flex-col gap-4 mb-4">
           <div>
             <label className="block text-sm font-semibold mb-1">Nome (in-game)</label>
-            <input
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              readOnly={identityLocked}
-              className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`}
-            />
+            <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} readOnly={identityLocked} className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`} />
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">RG (in-game)</label>
-            <input
-              type="text"
-              value={rg}
-              onChange={(e) => setRg(e.target.value)}
-              readOnly={identityLocked}
-              className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`}
-            />
+            <input type="text" value={rg} onChange={(e) => setRg(e.target.value)} readOnly={identityLocked} className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`} />
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">Idade (in-game)</label>
-            <input
-              type="text"
-              value={idade}
-              onChange={(e) => setIdade(e.target.value)}
-              readOnly={identityLocked}
-              className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`}
-            />
+            <input type="text" value={idade} onChange={(e) => setIdade(e.target.value)} readOnly={identityLocked} className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`} />
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">Discord</label>
-            <input
-              type="text"
-              value={discord}
-              onChange={(e) => setDiscord(e.target.value)}
-              readOnly={identityLocked}
-              className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`}
-            />
+            <input type="text" value={discord} onChange={(e) => setDiscord(e.target.value)} readOnly={identityLocked} className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`} />
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">Telefone (in-game)</label>
-            <input
-              type="text"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              readOnly={identityLocked}
-              className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`}
-            />
+            <input type="text" value={telefone} onChange={(e) => setTelefone(e.target.value)} readOnly={identityLocked} className={`w-full border px-3 py-2 text-sm outline-none ${identityLocked ? "bg-field-locked" : "bg-background"}`} />
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">Qual seu interesse no Judiciário?</label>
-            <textarea
-              value={interesse}
-              onChange={(e) => setInteresse(e.target.value)}
-              readOnly={identityLocked}
-              rows={3}
-              className={`w-full border px-3 py-2 text-sm outline-none resize-none ${identityLocked ? "bg-field-locked" : "bg-background"}`}
-            />
+            <textarea value={interesse} onChange={(e) => setInteresse(e.target.value)} readOnly={identityLocked} rows={3} className={`w-full border px-3 py-2 text-sm outline-none resize-none ${identityLocked ? "bg-field-locked" : "bg-background"}`} />
           </div>
         </div>
 
         {!identityLocked ? (
-          <button
-            onClick={lockIdentity}
-            disabled={!nome || !rg || !idade || !discord || !telefone || !interesse}
-            className="bg-primary text-primary-foreground px-6 py-2 font-semibold hover:bg-foreground disabled:opacity-40 disabled:cursor-not-allowed mb-4"
-          >
+          <button onClick={lockIdentity} disabled={!nome || !rg || !idade || !discord || !telefone || !interesse} className="bg-primary text-primary-foreground px-6 py-2 font-semibold hover:bg-foreground disabled:opacity-40 disabled:cursor-not-allowed mb-4">
             Confirmar Identidade
           </button>
         ) : (
@@ -336,17 +323,8 @@ const Index = () => {
                     const letter = opt.charAt(0);
                     const selected = answers[q.id] === letter;
                     return (
-                      <label
-                        key={letter}
-                        className={`flex items-center gap-3 cursor-pointer py-1 pl-2 border-l-4 ${selected ? "border-primary font-semibold" : "border-transparent"}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`q${q.id}`}
-                          checked={selected}
-                          onChange={() => handleAnswer(q.id, letter)}
-                          className="accent-primary"
-                        />
+                      <label key={letter} className={`flex items-center gap-3 cursor-pointer py-1 pl-2 border-l-4 ${selected ? "border-primary font-semibold" : "border-transparent"}`}>
+                        <input type="radio" name={`q${q.id}`} checked={selected} onChange={() => handleAnswer(q.id, letter)} className="accent-primary" />
                         <span className="text-sm">{opt}</span>
                       </label>
                     );
@@ -363,32 +341,18 @@ const Index = () => {
 
             <div className="mb-16">
               <p className="font-semibold mb-3">11. Explique qual é o papel do Poder Judiciário em Brasilândia e qual sua importância para garantir a aplicação das leis e a justiça dentro da cidade.</p>
-              <textarea
-                value={discursive1}
-                onChange={(e) => setDiscursive1(e.target.value)}
-                rows={6}
-                className="w-full border px-3 py-2 text-sm outline-none resize-none bg-background"
-              />
+              <textarea value={discursive1} onChange={(e) => setDiscursive1(e.target.value)} rows={6} className="w-full border px-3 py-2 text-sm outline-none resize-none bg-background" />
             </div>
 
             <div className="mb-16">
               <p className="font-semibold mb-3">12. Descreva como funciona o procedimento de uma prisão em flagrante, citando as instituições envolvidas e suas responsabilidades dentro do processo legal.</p>
-              <textarea
-                value={discursive2}
-                onChange={(e) => setDiscursive2(e.target.value)}
-                rows={6}
-                className="w-full border px-3 py-2 text-sm outline-none resize-none bg-background"
-              />
+              <textarea value={discursive2} onChange={(e) => setDiscursive2(e.target.value)} rows={6} className="w-full border px-3 py-2 text-sm outline-none resize-none bg-background" />
             </div>
 
             <div className="h-px bg-gold my-10" />
 
             {/* Submit */}
-            <button
-              onClick={handleSubmit}
-              disabled={sending}
-              className="w-full bg-primary text-primary-foreground py-3 font-semibold text-lg hover:bg-foreground disabled:opacity-50"
-            >
+            <button onClick={handleSubmit} disabled={sending} className="w-full bg-primary text-primary-foreground py-3 font-semibold text-lg hover:bg-foreground disabled:opacity-50">
               {sending ? "Enviando..." : "Enviar Respostas"}
             </button>
 
